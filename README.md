@@ -1,4 +1,4 @@
-# An example tool built against the LLVM library
+# An example tool built against LLVM 13.
 
 I wanted to make a clang tool out of the `clang` source code tree.  Ostensibly
 there are examples to follow.  However, I found out that the examples are based
@@ -41,6 +41,9 @@ I decided to use `ninja` to build LLVM since I have access to a 48-core machine
 and wanted to make use of all that CPU automatically.
 
 ### Preparation
+
+* Make sure you have either GCC or clang installed to compile the program, as
+  well as a working build environment.
 
 * Get and install `ninja`.  I like building from source so I checked it out from
   source and installed, as described [here][ninja].
@@ -91,3 +94,63 @@ to invite more trouble than it was worth.
 ## Building and installing the example.
 
 Finally, we hopefully get to substance.
+
+I decided to follow the above example and separate the source and build
+directories.
+
+```
+mkdir -p ${HOME}/code/clang-tool/build
+cd ${HOME}/code/clang-tool
+git checkout git@github.com:filmil/clang-tool-example
+```
+
+This checks out the source code and sets up the build directory.  The file
+[compile.sh] shows you the steps to compile the code.  It is a bit sad that
+it's 2021 and we still don't have a sane way to build softwre and have to
+resort to bash, but what to do.  The source code was taken from the [llvm
+example][llvmex], which itself bitrotted and does not show a recent API change
+to the needed `CommonOptionsParser` class; so I had to fix it up a tad bit,
+consulting [llvm source docs][doxygenx].
+
+[doxygenx]: https://clang.llvm.org/doxygen/classclang_1_1tooling_1_1CommonOptionsParser.html
+[llvmex]: https://clang.llvm.org/docs/LibTooling.html
+
+To compile, do the following:
+
+```
+cd ${HOME}/code/clang-tool/build
+../clang-tool-example/compile.sh
+```
+
+The script [compile.sh] will configure your build, expose
+`compile_commands.json` in case you use IDE support that is aware of that file,
+and run a `ninja` build.
+
+Note that seemingly if you change [CMakeLists.txt], you will need to blow away
+the contents of the `build` directory `rm -rf *`-style because apparently
+detecting that a crucial configuration file changed is too hard in the 21st
+century.  Sigh.
+
+After some waiting for compile and link to complete, you should have a binary
+named `example` in your `build` directory.  Since you should already have your
+current working directory set to there if you followed the above instructions,
+you can try your new binary out right away:
+
+```
+./example --help
+```
+
+This is not much, but will show you that something useful is indeed happening
+in that bundle of machine code.
+
+## Troubleshooting
+
+It seems reasonable to assume that, after some time passes, this example will
+itself bitrot. Since all LLVM APIs change all the time, chances are that the
+only really long-term viable way to maintain a tool is to upstream it to LLVM.
+This is great for generally useful tools, since everyone should benefit from
+those, and you as author get the benefit of the tool getting continuous
+maintenance for as long as it is needed.
+
+I thing the general utility of this example is that it shows how to do something
+you may find useful; so if you find it bitrotted, send a pull request in.
